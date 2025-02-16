@@ -11,10 +11,12 @@ describe("Unit test for isValidDartboardNotation", () => {
 
         // Invalid cases
         ["returns false for an invalid triple with a negative number (T-1)", "T-1", false],
+        ["returns false for an invalid double with zero (D0)", "D0", false],
         ["returns false for an invalid random string (XYZ)", "XYZ", false],
         ["returns false for an incomplete triple notation (T)", "T", false],
         ["returns false for an empty string", "", false],
-    ])("%s", (description, input, expected) => {
+        ["returns false for an out-of-range double notation (D21)", "D21", false],
+    ])("should %s", (description, input, expected) => {
         expect(isValidDartboardNotation(input)).toBe(expected);
     });
 });

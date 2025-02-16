@@ -1,4 +1,5 @@
-import { DARTBOARD_REGEX } from "../../regex";
+import { DARTBOARD_REGEX } from "../../../regex";
+import { isBullseye, isDartScoreValid } from "../../validations";
 
 /**
  * Validates if a string matches the dartboard notation.
@@ -8,7 +9,7 @@ import { DARTBOARD_REGEX } from "../../regex";
  * - "B" for Single Bullseye
  * - Notations starting with "T" (Triple) or "D" (Double) followed by digits (e.g., "T20", "D10").
  *
- * @param input - The string to validate.
+ * @param dartboardNotation - The string to validate.
  * @returns `true` if the string matches the valid dartboard notation, otherwise `false`.
  *
  * @example
@@ -20,11 +21,21 @@ import { DARTBOARD_REGEX } from "../../regex";
  * console.log(isValidDartboardNotation("XYZ")) // false
  * ```
  */
-const isValidDartboardNotation = (input: string): boolean => {
-    if (!isNaN(parseInt(input)) || input === "DB" || input === "B") {
+const isValidDartboardNotation = (dartboardNotation: string): boolean => {
+    const dartboardNotationNumber = parseInt(dartboardNotation);
+    if (!isNaN(dartboardNotationNumber)) {
+        return isDartScoreValid(dartboardNotationNumber);
+    }
+    if (isBullseye(dartboardNotation)) {
         return true;
     }
-    return DARTBOARD_REGEX.test(input);
+    const multiplierMatch = dartboardNotation.match(DARTBOARD_REGEX);
+
+    if (multiplierMatch) {
+        const value = parseInt(multiplierMatch[2]);
+        return (!isNaN(value) && isDartScoreValid(value, false));
+    }
+    return false;
 };
 
 export { isValidDartboardNotation };
