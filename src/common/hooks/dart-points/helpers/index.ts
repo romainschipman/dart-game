@@ -1,0 +1,1 @@
+export { getNextGameState } from "./get-next-game-state/get-next-game-state";
