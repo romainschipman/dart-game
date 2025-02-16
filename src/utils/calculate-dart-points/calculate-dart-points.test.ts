@@ -17,23 +17,13 @@ describe("Unit test for calculateDartPoints", () => {
         expect(() => calculateDartPoints("TNaN")).toThrow("Unsupported dartboard notation: TNaN");
     });
 
-    it("should calculate the correct points for a dartboard", () => {
-        expect(calculateDartPoints("T12")).toEqual(36);
-    });
-
-    it("should calculate the correct points for a dartboard", () => {
-        expect(calculateDartPoints("9")).toEqual(9);
-    });
-
-    it("should calculate the correct points for a dartboard", () => {
-        expect(calculateDartPoints("D20")).toEqual(40);
-    });
-
-    it("should calculate the correct points for a dartboard", () => {
-        expect(calculateDartPoints("DB")).toEqual(50);
-    });
-
-    it("should calculate the correct points for a dartboard", () => {
-        expect(calculateDartPoints("B")).toEqual(25);
+    it.each([
+        ["T12", "triple 12", 36],
+        ["9", "single 9", 9],
+        ["D20", "double 20", 40],
+        ["DB", "double bullseye", 50],
+        ["B", "bullseye", 25]
+    ])("should correctly calculate the points for %s (%s)", (input, _, expected) => {
+        expect(calculateDartPoints(input)).toEqual(expected);
     });
 });
