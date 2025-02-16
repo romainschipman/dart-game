@@ -17,6 +17,9 @@ const config = {
     rounds: {
         maxRounds: 10,
     },
+    history: {
+        maxUndoSteps: 9
+    }
 };
 
 export { config };
