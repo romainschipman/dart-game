@@ -1,3 +1,5 @@
+import { DARTBOARD_REGEX } from "../../regex";
+
 /**
  * Maps special dartboard notations to their corresponding points.
  */
@@ -21,7 +23,7 @@ const calculateDartPoints = (scoreNotation: string): number => {
         return parseInt(scoreNotation, 10);
     }
 
-    const multiplierMatch = scoreNotation.match(/^([TD])(\d+)$/);
+    const multiplierMatch = scoreNotation.match(DARTBOARD_REGEX);
     if (multiplierMatch) {
         const [_, multiplier, valueStr] = multiplierMatch;
         const value = parseInt(valueStr, 10);
