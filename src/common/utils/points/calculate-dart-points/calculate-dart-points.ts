@@ -1,12 +1,13 @@
 import { DARTBOARD_REGEX } from "../../../regex";
 import { isDartScoreValid } from "../../validations";
+import { config } from "../../../config";
 
 /**
  * Maps special dartboard notations to their corresponding points.
  */
 const SPECIAL_SCORES: Record<string, number> = {
-    DB: 50,
-    B: 25,
+    DB: config.bullseye.double,
+    B: config.bullseye.single,
 };
 
 /**

@@ -1,3 +1,5 @@
+import { config } from "../../../config";
+
 /**
  * Checks if the given dart score is valid (between 0 and 20 inclusive).
  *
@@ -14,8 +16,8 @@
  * ```
  */
 const isDartScoreValid = (dartScore: number, allowZero = true): boolean => {
-    const scoreMinimum = allowZero ? 0 : 1; // 0 is allowed by default unless specified otherwise
-    return dartScore >= scoreMinimum && dartScore <= 20;
+    const scoreMinimum = allowZero ? config.score.min : config.score.minForDoublesAndTriples;
+    return dartScore >= scoreMinimum && dartScore <= config.score.max;
 };
 
 export { isDartScoreValid };
