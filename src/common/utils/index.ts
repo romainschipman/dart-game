@@ -1,1 +1,2 @@
-export { calculateDartPoints } from "./calculate-dart-points/calculate-dart-points";
+export * from "./points";
+export * from "./validations";
