@@ -1,4 +1,4 @@
-import { renderHook, act, waitFor } from "@testing-library/react";
+import { renderHook, waitFor } from "@testing-library/react";
 import { SUCCESS_CODES, ERROR_CODES } from "../../constants";
 import { useDartPoints } from "./dart-points.hook";
 
