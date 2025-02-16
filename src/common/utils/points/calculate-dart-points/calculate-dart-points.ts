@@ -1,4 +1,5 @@
-import { DARTBOARD_REGEX } from "../../regex";
+import { DARTBOARD_REGEX } from "../../../regex";
+import { isDartScoreValid } from "../../validations";
 
 /**
  * Maps special dartboard notations to their corresponding points.
@@ -19,16 +20,20 @@ const calculateDartPoints = (scoreNotation: string): number => {
         return SPECIAL_SCORES[scoreNotation];
     }
 
-    if(!isNaN(parseInt(scoreNotation))) {
-        return parseInt(scoreNotation, 10);
+    const value = parseInt(scoreNotation);
+
+    if (!isNaN(value) && !isDartScoreValid(value)) {
+        throw new Error(`Invalid dartboard value: ${scoreNotation}`);
+    } else if(!isNaN(value)) {
+        return value;
     }
 
     const multiplierMatch = scoreNotation.match(DARTBOARD_REGEX);
     if (multiplierMatch) {
         const [_, multiplier, valueStr] = multiplierMatch;
-        const value = parseInt(valueStr, 10);
+        const value = parseInt(valueStr);
 
-        if (value > 20) {
+        if (!isDartScoreValid(value)) {
             throw new Error(`Invalid dartboard value: ${scoreNotation}`);
         }
 

@@ -1,8 +1,12 @@
 import { calculateDartPoints } from "./calculate-dart-points";
 
 describe("Unit test for calculateDartPoints", () => {
-    it("should throw an error if the score exceeds the allowed limits", () => {
+    it("should throw an error if the score exceeds the allowed limits (when it's triple)", () => {
        expect(() => calculateDartPoints("T21")).toThrow("Invalid dartboard value: T21");
+    });
+
+    it("should throw an error if the score exceeds the allowed limits", () => {
+        expect(() => calculateDartPoints("21")).toThrow("Invalid dartboard value: 21");
     });
 
     it("should throw an error for unsupported dartboard notation", () => {
