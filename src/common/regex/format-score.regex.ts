@@ -25,6 +25,6 @@
  * FORMAT_SCORE_REGEX.test("R-P1-D1-25");   // false (missing round number)
  * ```ts
  */
-const FORMAT_SCORE_REGEX = /^R\d+-P\d+-D\d+-[A-Za-z0-9]+$/;
+const FORMAT_SCORE_REGEX = /^(R\d+)-(P\d+)-(D\d+)-([A-Za-z0-9]+)$/;
 
 export { FORMAT_SCORE_REGEX };
