@@ -1,12 +1,15 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { config } from "../../config";
 import { ERROR_CODES, SUCCESS_CODES } from "../../constants";
 import { StatusCode } from "../../interfaces";
 import { isValidDartboardNotation } from "../../utils";
 import { formatScore, getNextGameState } from "./helpers";
+import { handleGameOver, triggerGameOver } from "../../events";
 
 export interface UseDartPointsProps {
+    /** Total number of players in the game. */
     playersCount: number;
+    /** Total number of rounds in the game. */
     roundsCount: number;
 }
 
@@ -16,41 +19,41 @@ export interface UseDartPointsProps {
  * This hook provides functionality to:
  * - Add a score for the current player, dart, and round.
  * - Remove the last score (with a limit on undo actions).
- * - Get the score for the current player.
- * - Track all scores during the game.
+ * - Retrieve the score history for the current player.
+ * - Track the overall game progression.
+ * - Handle game over events.
  *
- * It also handles game state transitions (e.g., moving to the next player, dart, or round),
- * and validates dartboard notations.
+ * It also manages transitions between players, darts, and rounds while enforcing validation rules.
  *
  * @param props - Configuration for the dart game.
  * @param props.playersCount - The total number of players in the game.
  * @param props.roundsCount - The total number of rounds in the game.
  * @returns An object containing functions and state:
+ * - `gameState`: The current game state including round, player, and dart count.
  * - `addScore`: Adds a score for the current dart and updates the game state.
  * - `removeLastScore`: Removes the last recorded score, if undo steps are allowed.
- * - `getCurrentPlayerScore`: Retrieves the score of the current player.
+ * - `getCurrentPlayerScore`: Retrieves the score history of the current player.
  * - `scoreHistory`: A list of all recorded scores in the format `R{round}-P{player}-D{dart}-{points}`.
  *
  * @example
  * ```tsx
- * // Example usage of the hook
  * const { addScore, removeLastScore, getCurrentPlayerScore, scoreHistory } = useDartPoints({ playersCount: 4, roundsCount: 10 });
  *
  * // Add a valid score
  * const result = addScore("T20");
  * if (result.type === "success") {
- *   console.log(result.message); // e.g., "Score added successfully"
+ *   console.log(result.message); // "Score added successfully"
  * }
  *
  * // Remove the last score
  * const undoResult = removeLastScore();
  * if (undoResult.type === "success") {
- *   console.log(undoResult.message); // e.g., "Last score removed successfully"
+ *   console.log(undoResult.message); // "Last score removed successfully"
  * }
  *
  * // Get the current player's score
  * const currentPlayerScore = getCurrentPlayerScore();
- * console.log(currentPlayerScore); // e.g., "R1-P1-D1-T20"
+ * console.log(currentPlayerScore); // ["R1-P1-D1-T20"]
  *
  * // View all scores
  * console.log(scoreHistory); // ["R1-P1-D1-T20", "R1-P1-D2-D10", ...]
@@ -70,7 +73,7 @@ const useDartPoints = (props: UseDartPointsProps) => {
         setGameState(prevState => ({ ...prevState, ...updates }));
     };
 
-    const removeLastScore = () : StatusCode => {
+    const removeLastScore = (): StatusCode => {
         if (gameOver) {
             return SUCCESS_CODES.GAME_OVER;
         }
@@ -80,18 +83,18 @@ const useDartPoints = (props: UseDartPointsProps) => {
         updateGameState({ undoLimitTracker: gameState.undoLimitTracker + 1 });
         setScoreHistory(prevScores => prevScores.slice(0, -1));
         return SUCCESS_CODES.SCORE_REMOVED;
-    }
+    };
 
-    const addScore = (nbPoints: string) : StatusCode => {
+    const addScore = (nbPoints: string): StatusCode => {
         if (gameOver) {
             return SUCCESS_CODES.GAME_OVER;
         }
         if (!isValidDartboardNotation(nbPoints)) {
             return ERROR_CODES.INVALID_DART_NOTATION;
         }
+
         const currentScore = formatScore(gameState.currentRound, gameState.currentPlayer, gameState.dartCount, nbPoints);
         setScoreHistory(prevScores => [...prevScores, currentScore]);
-
 
         const { isGameOver, dartCount: nextDartCount, playerNumber, roundNumber } = getNextGameState(
             { roundNumber: gameState.currentRound, playerNumber: gameState.currentPlayer, dartCount: gameState.dartCount },
@@ -99,17 +102,21 @@ const useDartPoints = (props: UseDartPointsProps) => {
         );
 
         if (isGameOver) {
-            setGameOver(true);
+            triggerGameOver();
             return SUCCESS_CODES.GAME_OVER;
         }
 
         updateGameState({ currentRound: roundNumber, currentPlayer: playerNumber, dartCount: nextDartCount });
         return SUCCESS_CODES.SCORE_ADDED;
-    }
+    };
 
     const getCurrentPlayerScore = () => {
-      return scoreHistory.filter(score => score.includes(`P${gameState.currentPlayer}`));
+        return scoreHistory.filter(score => score.includes(`P${gameState.currentPlayer}`));
     };
+
+    useEffect(() => (
+        handleGameOver(() => setGameOver(true))
+    ), []);
 
     return {
         gameState,
@@ -117,7 +124,7 @@ const useDartPoints = (props: UseDartPointsProps) => {
         removeLastScore,
         getCurrentPlayerScore,
         scoreHistory
-    }
+    };
 };
 
 export { useDartPoints };
