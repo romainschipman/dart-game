@@ -1,0 +1,1 @@
+export { calculateHunterScores } from "./calculate-players-score/calculate-hunter-scores";
