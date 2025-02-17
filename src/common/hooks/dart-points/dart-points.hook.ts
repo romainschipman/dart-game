@@ -112,6 +112,7 @@ const useDartPoints = (props: UseDartPointsProps) => {
     };
 
     return {
+        gameState,
         addScore,
         removeLastScore,
         getCurrentPlayerScore,
