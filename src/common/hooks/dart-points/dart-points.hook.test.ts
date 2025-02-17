@@ -138,4 +138,55 @@ describe("useDartPoints", () => {
 
         expect(unsubscribeMock).toHaveBeenCalledTimes(1);
     });
+
+    test("should handle game over event correctly", async () => {
+        const handleGameOverMock = jest.spyOn(gameOverEvents, "handleGameOver").mockImplementation((handler) => {
+            setTimeout(handler, 100);
+            return () => {};
+        });
+
+        const { result } = renderHook(() => useDartPoints({ playersCount: 1, roundsCount: 1 }));
+
+        expect(handleGameOverMock).toHaveBeenCalled();
+
+        await waitFor(() => {
+            const res = result.current.removeLastScore();
+            expect(res).toEqual(SUCCESS_CODES.GAME_OVER);
+        });
+
+        await waitFor(() => {
+            const res = result.current.addScore("T20");
+            expect(res).toEqual(SUCCESS_CODES.GAME_OVER);
+        });
+    });
+
+    test("should return only the current player's score", async () => {
+        const { result } = renderHook(() => useDartPoints({ playersCount: 2, roundsCount: 1 }));
+
+        await waitFor(() => {
+            result.current.addScore("T20");
+        });
+
+        await waitFor(() => {
+            result.current.addScore("D10");
+        });
+
+        expect(result.current.getCurrentPlayerScore()).toEqual(["R1-P1-D1-T20", "R1-P1-D2-D10"]);
+
+        await waitFor(() => {
+            result.current.addScore("D10");
+        });
+
+        await waitFor(() => {
+            result.current.addScore("5");
+        });
+
+        expect(result.current.getCurrentPlayerScore()).toEqual(["R1-P2-D1-5"]);
+    });
+
+    test("should return an empty array if no scores are recorded", () => {
+        const { result } = renderHook(() => useDartPoints({ playersCount: 2, roundsCount: 1 }));
+
+        expect(result.current.getCurrentPlayerScore()).toEqual([]);
+    });
 });
