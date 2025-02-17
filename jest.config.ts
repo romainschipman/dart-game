@@ -1,10 +1,18 @@
 import type { Config } from 'jest';
 
 const config: Config = {
-    preset: 'ts-jest', // Si tu utilises ts-jest
+    collectCoverage: true,
+    coverageDirectory: "coverage",
+    preset: 'ts-jest',
     testEnvironment: 'jsdom',
     transformIgnorePatterns: [
         'node_modules/(?!(module-to-transform)/)',
+    ],
+    coveragePathIgnorePatterns: [
+        "/node_modules/",
+        "/dist/",
+        "/coverage/",
+        "index.ts",
     ],
 };
 
