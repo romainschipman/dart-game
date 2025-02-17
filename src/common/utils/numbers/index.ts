@@ -1,0 +1,1 @@
+export { getMaxNumbers } from "./get-max-numbers/get-max-numbers";
