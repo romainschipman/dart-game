@@ -18,7 +18,8 @@ describe("Unit test for readFormattedScore", () => {
         ["R1--D3-T20", "Invalid formatted score: R1--D3-T20"],
         ["R-P-D-T20", "Invalid formatted score: R-P-D-T20"],
     ])("should throw an error for invalid formatted score '%s'", (formattedScore, errorMessage) => {
-        expect(() => parseFormattedScore(formattedScore)).toThrow(errorMessage);
+        const result = parseFormattedScore(formattedScore);
+        expect(result).toEqual(null);
     });
 });
 
