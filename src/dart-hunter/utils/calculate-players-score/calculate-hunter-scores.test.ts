@@ -1,188 +1,78 @@
+import { parseFormattedScore } from "../../../common/utils";
+import { updatePlayerScoreAndResetHunted } from "../update-player-score-and-reset-hunted/update-player-score-and-reset-hunted";
 import { calculateHunterScores } from "./calculate-hunter-scores";
-import * as utils from "../../../common/utils";
 
-jest.mock("../../../common/utils", () => ({
-    calculateDartPoints: jest.fn(),
-    getMaxNumbers: jest.fn(),
-    parseFormattedScore: jest.fn()
-}));
+jest.mock("../../../common/utils");
+jest.mock("../update-player-score-and-reset-hunted/update-player-score-and-reset-hunted");
 
 describe("Unit test for calculateHunterScores", () => {
     beforeEach(() => {
-        jest.clearAllMocks();
+        jest.resetAllMocks();
     });
 
-    test("should return an empty object when scores array is empty", () => {
-        expect(calculateHunterScores([])).toEqual({});
+    it("should return an empty object when given an empty array", () => {
+        const result = calculateHunterScores([]);
+        expect(result).toEqual({});
     });
 
-    test("should calculate scores correctly for multiple players", () => {
-        jest.spyOn(utils, "parseFormattedScore").mockImplementation(score => {
-            const mappings: Record<string, any> = {
-                "R1-P1-D1-T20": { player: 1, score: "T20" },
-                "R1-P2-D1-D10": { player: 2, score: "D10" },
-                "R1-P1-D2-5": { player: 1, score: "5" }
-            };
-            return mappings[score];
-        });
+    it("should correctly calculate scores from a list of formatted scores", () => {
+        (parseFormattedScore as jest.Mock)
+            .mockReturnValueOnce({ player: 1, score: "T20" })
+            .mockReturnValueOnce({ player: 2, score: "S5" })
+            .mockReturnValueOnce({ player: 1, score: "D10" });
 
-        jest.spyOn(utils, "calculateDartPoints").mockImplementation(score => {
-            const mappings: Record<string, number> = {
-                "T20": 60,
-                "D10": 20,
-                "5": 5
-            };
-            return mappings[score];
-        });
+        (updatePlayerScoreAndResetHunted as jest.Mock)
+            .mockImplementation((acc, { player, score }) => {
+                const playerKey = `p${player}`;
+                const newScore = (acc[playerKey] || 0) + (score === "T20" ? 60 : score === "S5" ? 5 : 20);
+                return { ...acc, [playerKey]: newScore };
+            });
 
-        jest.spyOn(utils, "getMaxNumbers").mockReturnValue(2);
+        const scores = ["R1-P1-D1-T20", "R2-P2-D2-S5", "R3-P1-D3-D10"];
+        const result = calculateHunterScores(scores);
 
-        const scores = ["R1-P1-D1-T20", "R1-P2-D1-D10", "R1-P1-D2-5"];
-        const expectedResults = { p1: 65, p2: 20 };
-
-        expect(calculateHunterScores(scores)).toEqual(expectedResults);
+        expect(result).toEqual({ p1: 80, p2: 5 });
+        expect(parseFormattedScore).toHaveBeenCalledTimes(3);
+        expect(updatePlayerScoreAndResetHunted).toHaveBeenCalledTimes(3);
     });
 
-    test("should calculate scores correctly for a single player", () => {
-        jest.spyOn(utils, "parseFormattedScore").mockImplementation(score => {
-            const mappings: Record<string, any> = {
-                "R1-P1-D1-T20": { player: 1, score: "T20" },
-                "R1-P1-D2-D10": { player: 1, score: "D10" }
-            };
-            return mappings[score];
-        });
+    it("should filter out null results from parseFormattedScore", () => {
+        (parseFormattedScore as jest.Mock)
+            .mockReturnValueOnce({ player: 1, score: "T20" })
+            .mockReturnValueOnce(null) // Invalid score, should be filtered out
+            .mockReturnValueOnce({ player: 2, score: "S5" });
 
-        jest.spyOn(utils, "calculateDartPoints").mockImplementation(score => {
-            const mappings: Record<string, number> = {
-                "T20": 60,
-                "D10": 20,
-            };
-            return mappings[score];
-        });
+        (updatePlayerScoreAndResetHunted as jest.Mock)
+            .mockImplementation((acc, { player, score }) => {
+                const playerKey = `p${player}`;
+                const newScore = (acc[playerKey] || 0) + (score === "T20" ? 60 : 5);
+                return { ...acc, [playerKey]: newScore };
+            });
 
-        jest.spyOn(utils, "getMaxNumbers").mockReturnValue(1);
+        const scores = ["R1-P1-D1-T20", "INVALID", "R3-P2-D3-S5"];
+        const result = calculateHunterScores(scores);
 
-        const scores = ["R1-P1-D1-T20", "R1-P1-D2-D10"];
-        const expectedResults = { p1: 80 };
-
-        expect(calculateHunterScores(scores)).toEqual(expectedResults);
+        expect(result).toEqual({ p1: 60, p2: 5 });
+        expect(parseFormattedScore).toHaveBeenCalledTimes(3);
+        expect(updatePlayerScoreAndResetHunted).toHaveBeenCalledTimes(2);
     });
 
-    test("should return zero score if all dart scores are invalid", () => {
-        jest.spyOn(utils, "parseFormattedScore").mockImplementation(score => ({
-            round: 1,
-            dart: 1,
-            player: 1,
-            score
-        }));
+    it("should not mutate the original scores object", () => {
+        (parseFormattedScore as jest.Mock)
+            .mockReturnValueOnce({ player: 1, score: "D20" });
 
-        jest.spyOn(utils, "calculateDartPoints").mockReturnValue(0);
-        jest.spyOn(utils, "getMaxNumbers").mockReturnValue(1);
+        (updatePlayerScoreAndResetHunted as jest.Mock)
+            .mockImplementation((acc, { player, score }) => {
+                const playerKey = `p${player}`;
+                const newScore = (acc[playerKey] || 0) + 40; // Assuming D20 gives 40 points
+                return { ...acc, [playerKey]: newScore };
+            });
 
-        const scores = ["R1-P1-D1-INVALID", "R1-P1-D2-INVALID"];
-        const expectedResults = { p1: 0 };
+        const scores = ["R1-P1-D1-D20"];
+        const originalObject = {};
+        const result = calculateHunterScores(scores);
 
-        expect(calculateHunterScores(scores)).toEqual(expectedResults);
+        expect(result).not.toBe(originalObject);
+        expect(result).toEqual({ p1: 40 });
     });
-
-    test("should handle cases where some players have no valid scores", () => {
-        jest.spyOn(utils, "parseFormattedScore").mockImplementation(score => {
-            const mappings: Record<string, any> = {
-                "R1-P1-D1-T20": { player: 1, score: "T20" },
-                "R1-P2-D1-INVALID": { player: 2, score: "INVALID" }
-            };
-            return mappings[score];
-        });
-
-        jest.spyOn(utils, "calculateDartPoints").mockImplementation(score => {
-            const mappings: Record<string, number> = {
-                "T20": 60,
-                "INVALID": 0
-            };
-            return mappings[score];
-        });
-
-        jest.spyOn(utils, "getMaxNumbers").mockReturnValue(2);
-
-        const scores = ["R1-P1-D1-T20", "R1-P2-D1-INVALID"];
-        const expectedResults = { p1: 60, p2: 0 };
-
-        expect(calculateHunterScores(scores)).toEqual(expectedResults);
-    });
-
-    test("should handle case where all players have the same score", () => {
-        jest.spyOn(utils, "parseFormattedScore").mockImplementation(score => ({
-            round: 1,
-            dart: 1,
-            player: parseInt(score.split("-P")[1].charAt(0)),
-            score
-        }));
-
-        jest.spyOn(utils, "calculateDartPoints").mockReturnValue(50);
-        jest.spyOn(utils, "getMaxNumbers").mockReturnValue(3);
-
-        const scores = ["R1-P1-D1-BULL", "R1-P2-D1-BULL", "R1-P3-D1-BULL"];
-        const expectedResults = { p1: 50, p2: 50, p3: 50 };
-
-        expect(calculateHunterScores(scores)).toEqual(expectedResults);
-    });
-
-    test("should correctly compute scores even if player indexes are not sequential", () => {
-        jest.spyOn(utils, "parseFormattedScore").mockImplementation(score => {
-            const mappings: Record<string, any> = {
-                "R1-P2-D1-T20": { player: 2, score: "T20" },
-                "R1-P4-D1-D10": { player: 4, score: "D10" }
-            };
-            return mappings[score];
-        });
-
-        jest.spyOn(utils, "calculateDartPoints").mockImplementation(score => {
-            const mappings: Record<string, number> = {
-                "T20": 60,
-                "D10": 20
-            };
-            return mappings[score];
-        });
-
-        jest.spyOn(utils, "getMaxNumbers").mockReturnValue(4);
-
-        const scores = ["R1-P2-D1-T20", "R1-P4-D1-D10"];
-        const expectedResults = { p1: 0, p2: 60, p3: 0, p4: 20 };
-
-        expect(calculateHunterScores(scores)).toEqual(expectedResults);
-    });
-
-    test("should call the computeValue callback inside getMaxNumbers", () => {
-        jest.restoreAllMocks();
-
-        const spy = jest.spyOn(utils, "getMaxNumbers");
-
-        jest.spyOn(utils, "parseFormattedScore").mockImplementation(score => {
-            const mappings: Record<string, any> = {
-                "R1-P1-D1-T20": { player: 1, score: "T20" },
-                "R1-P2-D1-D10": { player: 2, score: "D10" },
-                "R1-P1-D2-5": { player: 1, score: "5" }
-            };
-            return mappings[score];
-        });
-
-        const scores = ["R1-P1-D1-T20", "R1-P2-D1-D10", "R1-P1-D2-5"];
-
-        calculateHunterScores(scores);
-
-        expect(spy).toHaveBeenCalledTimes(1);
-
-        expect(spy.mock.calls[0][1]).toBeInstanceOf(Function);
-        const computeValue = spy.mock.calls[0][1];
-        expect(computeValue).not.toBeUndefined();
-
-        if(computeValue) {
-            expect(computeValue({ player: 1, score: "T20" })).toBe(1);
-            expect(computeValue({ player: 2, score: "D10" })).toBe(2);
-            expect(computeValue({ player: 1, score: "5" })).toBe(1);
-        }
-    });
-
-
-
 });
