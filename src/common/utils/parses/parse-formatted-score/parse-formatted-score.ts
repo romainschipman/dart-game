@@ -1,4 +1,5 @@
 import { FORMAT_SCORE_REGEX } from "../../../regex";
+import { ParsedScore } from "../../../interfaces";
 
 /**
  * Parses a formatted score string into an object containing its components.
@@ -32,7 +33,7 @@ import { FORMAT_SCORE_REGEX } from "../../../regex";
  * // }
  * ```
  */
-const parseFormattedScore = (formattedScore: string) => {
+const parseFormattedScore = (formattedScore: string) : ParsedScore | null => {
     const scoreMatch = formattedScore.match(FORMAT_SCORE_REGEX);
     if (scoreMatch) {
         const round = parseInt(scoreMatch[1].replace("R", ""), 10);
@@ -42,7 +43,7 @@ const parseFormattedScore = (formattedScore: string) => {
 
         return { round, player, dart, score };
     }
-    throw new Error(`Invalid formatted score: ${formattedScore}`);
+    return null;
 };
 
 export { parseFormattedScore };
