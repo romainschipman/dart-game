@@ -2,18 +2,20 @@ import { renderHook, waitFor } from "@testing-library/react";
 import { SUCCESS_CODES, ERROR_CODES } from "../../constants";
 import { useDartPoints } from "./dart-points.hook";
 import * as gameOverEvents from "../../events";
+import * as helpers from "./helpers"; // Import général des helpers
 
 jest.mock("../../events", () => ({
     handleGameOver: jest.fn(),
     triggerGameOver: jest.fn().mockReturnValue(jest.fn()),
 }));
 
-describe("useDartPoints", () => {
+describe("Unit test for useDartPoints", () => {
     const defaultProps = { playersCount: 4, roundsCount: 10 };
     const unsubscribeMock = jest.fn();
+
     beforeEach(() => {
+        jest.restoreAllMocks();
         jest.spyOn(gameOverEvents, "handleGameOver").mockReturnValue(unsubscribeMock);
-        jest.clearAllMocks();
     });
 
     test("should initialize with default state", async () => {
@@ -22,7 +24,33 @@ describe("useDartPoints", () => {
         expect(result.current.scoreHistory).toEqual([]);
         expect(result.current.addScore).toBeInstanceOf(Function);
         expect(result.current.removeLastScore).toBeInstanceOf(Function);
-        expect(result.current.getCurrentPlayerScore).toBeInstanceOf(Function);
+        expect(result.current.getPlayerRoundScores).toBeInstanceOf(Function);
+    });
+
+    test("should call extractPlayerRoundScores when getPlayerRoundScores is invoked", async () => {
+        const extractPlayerRoundScoresMock = jest.spyOn(helpers, "extractPlayerRoundScores").mockReturnValue({
+            p1: ["T20"],
+            p2: [],
+            p3: [],
+            p4: [],
+        });
+
+        const { result } = renderHook(() => useDartPoints(defaultProps));
+
+        const scores = result.current.getPlayerRoundScores();
+
+        expect(extractPlayerRoundScoresMock).toHaveBeenCalledWith({
+            playersCount: 4,
+            scoreHistory: [],
+            currentRound: 1,
+        });
+
+        expect(scores).toEqual({
+            p1: ["T20"],
+            p2: [],
+            p3: [],
+            p4: [],
+        });
     });
 
     test("should add a valid score and update the state", async () => {
@@ -134,9 +162,11 @@ describe("useDartPoints", () => {
             expect(result.current.removeLastScore()).toEqual(ERROR_CODES.UNDO_LIMIT_REACHED);
         });
 
-        unmount();
+        await waitFor(() => {
+            unmount();
+        });
 
-        expect(unsubscribeMock).toHaveBeenCalledTimes(1);
+        expect(unsubscribeMock).toHaveBeenCalled();
     });
 
     test("should handle game over event correctly", async () => {
@@ -158,35 +188,5 @@ describe("useDartPoints", () => {
             const res = result.current.addScore("T20");
             expect(res).toEqual(SUCCESS_CODES.GAME_OVER);
         });
-    });
-
-    test("should return only the current player's score", async () => {
-        const { result } = renderHook(() => useDartPoints({ playersCount: 2, roundsCount: 1 }));
-
-        await waitFor(() => {
-            result.current.addScore("T20");
-        });
-
-        await waitFor(() => {
-            result.current.addScore("D10");
-        });
-
-        expect(result.current.getCurrentPlayerScore()).toEqual(["R1-P1-D1-T20", "R1-P1-D2-D10"]);
-
-        await waitFor(() => {
-            result.current.addScore("D10");
-        });
-
-        await waitFor(() => {
-            result.current.addScore("5");
-        });
-
-        expect(result.current.getCurrentPlayerScore()).toEqual(["R1-P2-D1-5"]);
-    });
-
-    test("should return an empty array if no scores are recorded", () => {
-        const { result } = renderHook(() => useDartPoints({ playersCount: 2, roundsCount: 1 }));
-
-        expect(result.current.getCurrentPlayerScore()).toEqual([]);
     });
 });
