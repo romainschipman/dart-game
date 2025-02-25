@@ -1,16 +1,30 @@
 import { useEffect, useState } from "react";
 import { config } from "../../config";
 import { ERROR_CODES, SUCCESS_CODES } from "../../constants";
-import { StatusCode } from "../../interfaces";
+import { GameState, StatusCode } from "../../interfaces";
 import { isValidDartboardNotation, parseFormattedScore } from "../../utils";
 import { extractPlayerRoundScores, formatScore, getNextGameState, getUndoScoreError } from "./helpers";
 import { handleGameOver, triggerGameOver } from "../../events";
+import { CurrentGameState } from "../../interfaces/game-state.interface";
 
 export interface UseDartPointsProps {
     /** Total number of players in the game. */
     playersCount: number;
     /** Total number of rounds in the game. */
     roundsCount: number;
+}
+
+export interface UseDartPointsReturn {
+    /** The current game state, including round, player, dart count, and undo tracking. */
+    gameState: CurrentGameState;
+    /** Adds a score for the current dart and updates the game state. */
+    addScore: (score: string) => void;
+    /** Removes the last recorded score if undo steps are allowed. */
+    removeLastScore: (score: string) => void;
+    /** Retrieves the latest scores for each player in the current or previous round. */
+    getPlayerRoundScores: () =>  Record<string, string[]>;
+    /** A list of all recorded scores, formatted as `R{round}-P{player}-D{dart}-{points}`. */
+    scoreHistory: string[];
 }
 
 /**
@@ -68,8 +82,8 @@ export interface UseDartPointsProps {
  * console.log(scoreHistory); // ["R1-P1-D1-T20", "R1-P1-D2-D10", ...]
  * ```
  */
-const useDartPoints = (props: UseDartPointsProps) => {
-    const [gameState, setGameState] = useState({
+const useDartPoints = (props: UseDartPointsProps) : UseDartPointsReturn => {
+    const [gameState, setGameState] = useState<CurrentGameState>({
         currentRound: 1,
         currentPlayer: 1,
         dartCount: 1,
