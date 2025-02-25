@@ -18,9 +18,9 @@ export interface UseDartPointsReturn {
     /** The current game state, including round, player, dart count, and undo tracking. */
     gameState: CurrentGameState;
     /** Adds a score for the current dart and updates the game state. */
-    addScore: (score: string) => void;
+    addScore: (score: string) => StatusCode;
     /** Removes the last recorded score if undo steps are allowed. */
-    removeLastScore: (score: string) => void;
+    removeLastScore: () => StatusCode;
     /** Retrieves the latest scores for each player in the current or previous round. */
     getPlayerRoundScores: () =>  Record<string, string[]>;
     /** A list of all recorded scores, formatted as `R{round}-P{player}-D{dart}-{points}`. */
