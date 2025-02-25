@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { config } from "../../config";
 import { ERROR_CODES, SUCCESS_CODES } from "../../constants";
 import { StatusCode } from "../../interfaces";
-import { isValidDartboardNotation } from "../../utils";
-import { extractPlayerRoundScores, formatScore, getNextGameState } from "./helpers";
+import { isValidDartboardNotation, parseFormattedScore } from "../../utils";
+import { extractPlayerRoundScores, formatScore, getNextGameState, getUndoScoreError } from "./helpers";
 import { handleGameOver, triggerGameOver } from "../../events";
 
 export interface UseDartPointsProps {
@@ -29,12 +29,21 @@ export interface UseDartPointsProps {
  * @param props.playersCount - The total number of players in the game.
  * @param props.roundsCount - The total number of rounds in the game.
  * @returns An object containing functions and state:
- * - `gameState`: The current game state including round, player, and dart count.
- * - `addScore`: Adds a score for the current dart and updates the game state.
- * - `removeLastScore`: Removes the last recorded score, if undo steps are allowed.
- * - `getPlayerRoundScores`: Retrieves the latest scores for each player in the current or previous round.
- * - `scoreHistory`: A list of all recorded scores in the format `R{round}-P{player}-D{dart}-{points}`.
- *
+ *  - `gameState`: The current game state, including round, player, dart count, and undo tracking.
+ *  - `addScore`: Adds a score for the current dart and updates the game state.
+ *    - Returns:
+ *      - `SUCCESS_CODES.SCORE_ADDED` if the score was successfully recorded.
+ *      - `SUCCESS_CODES.GAME_OVER` if the score triggers the game over state.
+ *      - `ERROR_CODES.INVALID_DART_NOTATION` if the input is invalid.
+ *   - `removeLastScore`: Removes the last recorded score if undo steps are allowed.
+ *    - Returns:
+ *      - `SUCCESS_CODES.SCORE_REMOVED` if a score was successfully removed.
+ *      - `ERROR_CODES.NO_SCORES_TO_REMOVE` if the history is empty.
+ *      - `ERROR_CODES.UNDO_LIMIT_REACHED` if the undo limit is exceeded.
+ *      - `ERROR_CODES.GAME_OVER` if the game is already over.
+ *  - `getPlayerRoundScores`: Retrieves the latest scores for each player in the current or previous round.
+ *  - `scoreHistory`: A list of all recorded scores, formatted as `R{round}-P{player}-D{dart}-{points}`.
+ *    - Example: `["R1-P1-D1-T20", "R1-P1-D2-D10"]`
  * @example
  * ```tsx
  * const { addScore, removeLastScore, getPlayerRoundScores, scoreHistory } = useDartPoints({ playersCount: 4, roundsCount: 10 });
@@ -74,14 +83,25 @@ const useDartPoints = (props: UseDartPointsProps) => {
     };
 
     const removeLastScore = (): StatusCode => {
-        if (gameOver) {
-            return SUCCESS_CODES.GAME_OVER;
+
+        const undoScoreError = getUndoScoreError(scoreHistory, gameOver, gameState.undoLimitTracker, config.history.maxUndoSteps);
+        if(undoScoreError) {
+            return undoScoreError;
         }
-        if (gameState.undoLimitTracker >= config.history.maxUndoSteps) {
-            return ERROR_CODES.UNDO_LIMIT_REACHED;
+
+        const newGameState = parseFormattedScore(scoreHistory[scoreHistory.length - 1]);
+
+        if (!newGameState) {
+            return ERROR_CODES.UNEXPECTED_ERROR;
         }
-        updateGameState({ undoLimitTracker: gameState.undoLimitTracker + 1 });
-        setScoreHistory(prevScores => prevScores.slice(0, -1));
+        updateGameState({
+            undoLimitTracker: gameState.undoLimitTracker + 1,
+            currentPlayer: newGameState.player,
+            currentRound: newGameState.round,
+            dartCount: newGameState.dart
+        });
+
+        setScoreHistory(prevState => prevState.slice(0, -1));
         return SUCCESS_CODES.SCORE_REMOVED;
     };
 
