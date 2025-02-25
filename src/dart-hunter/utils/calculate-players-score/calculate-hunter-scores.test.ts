@@ -74,7 +74,7 @@ describe("Unit test for calculateHunterScores", () => {
         });
 
         (updatePlayerScoreAndResetHunted as jest.Mock).mockImplementation(
-            (acc, { player, score }) => {
+            (acc, { player }) => {
                 const playerKey = `p${player}`;
                 const newScore = (acc[playerKey] || 0) + 40;
                 return { ...acc, [playerKey]: newScore };
@@ -97,7 +97,7 @@ describe("Unit test for calculateHunterScores", () => {
         });
 
         (updatePlayerScoreAndResetHunted as jest.Mock).mockImplementation(
-            (acc, { player, score }) => ({ ...acc, [`p${player}`]: 301 })
+            (acc, { player }) => ({ ...acc, [`p${player}`]: 301 })
         );
 
         const scores = ["R1-P1-D1-T20"];
