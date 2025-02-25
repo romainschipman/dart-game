@@ -1,5 +1,6 @@
 import { parseFormattedScore } from "../../../common/utils";
 import { updatePlayerScoreAndResetHunted } from "../update-player-score-and-reset-hunted/update-player-score-and-reset-hunted";
+import { triggerGameOver } from "../../../common/events";
 
 /**
  * Computes the cumulative scores for each player in the Hunter 301 game mode.
@@ -22,9 +23,15 @@ const calculateHunterScores = (scores: string[], targetScore: number): Record<st
         .map(parseFormattedScore)
         .filter((entry) => entry !== null);
 
-    return parsedScores.reduce<Record<string, number>>((previousValue, currentValue) => (
+    const totalScores = parsedScores.reduce<Record<string, number>>((previousValue, currentValue) => (
         updatePlayerScoreAndResetHunted(previousValue, currentValue, targetScore)
     ), {});
+
+    if(Object.values(totalScores).some(score => score === targetScore)) {
+        triggerGameOver();
+    }
+
+    return totalScores;
 };
 
 export { calculateHunterScores };
