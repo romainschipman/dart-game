@@ -11,7 +11,7 @@ describe("Unit test for calculateHunterScores", () => {
     });
 
     it("should return an empty object when given an empty array", () => {
-        const result = calculateHunterScores([]);
+        const result = calculateHunterScores([], 301);
         expect(result).toEqual({});
     });
 
@@ -29,7 +29,7 @@ describe("Unit test for calculateHunterScores", () => {
             });
 
         const scores = ["R1-P1-D1-T20", "R2-P2-D2-S5", "R3-P1-D3-D10"];
-        const result = calculateHunterScores(scores);
+        const result = calculateHunterScores(scores, 301);
 
         expect(result).toEqual({ p1: 80, p2: 5 });
         expect(parseFormattedScore).toHaveBeenCalledTimes(3);
@@ -50,7 +50,7 @@ describe("Unit test for calculateHunterScores", () => {
             });
 
         const scores = ["R1-P1-D1-T20", "INVALID", "R3-P2-D3-S5"];
-        const result = calculateHunterScores(scores);
+        const result = calculateHunterScores(scores, 301);
 
         expect(result).toEqual({ p1: 60, p2: 5 });
         expect(parseFormattedScore).toHaveBeenCalledTimes(3);
@@ -64,13 +64,13 @@ describe("Unit test for calculateHunterScores", () => {
         (updatePlayerScoreAndResetHunted as jest.Mock)
             .mockImplementation((acc, { player, score }) => {
                 const playerKey = `p${player}`;
-                const newScore = (acc[playerKey] || 0) + 40; // Assuming D20 gives 40 points
+                const newScore = (acc[playerKey] || 0) + 40;
                 return { ...acc, [playerKey]: newScore };
             });
 
         const scores = ["R1-P1-D1-D20"];
         const originalObject = {};
-        const result = calculateHunterScores(scores);
+        const result = calculateHunterScores(scores, 301);
 
         expect(result).not.toBe(originalObject);
         expect(result).toEqual({ p1: 40 });
