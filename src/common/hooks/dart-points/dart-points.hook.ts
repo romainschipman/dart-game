@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { config } from "../../config";
 import { ERROR_CODES, SUCCESS_CODES } from "../../constants";
-import { GameState, StatusCode } from "../../interfaces";
+import { StatusCode } from "../../interfaces";
 import { isValidDartboardNotation, parseFormattedScore } from "../../utils";
 import { extractPlayerRoundScores, formatScore, getNextGameState, getUndoScoreError } from "./helpers";
 import { handleGameOver, triggerGameOver } from "../../events";
