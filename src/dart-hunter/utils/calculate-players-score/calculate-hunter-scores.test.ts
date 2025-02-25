@@ -47,7 +47,7 @@ describe("Unit test for calculateHunterScores", () => {
     it("should filter out null results from parseFormattedScore", () => {
         (parseFormattedScore as jest.Mock)
             .mockReturnValueOnce({ player: 1, score: "T20" })
-            .mockReturnValueOnce(null) // Invalid score, should be filtered out
+            .mockReturnValueOnce(null)
             .mockReturnValueOnce({ player: 2, score: "S5" });
 
         (updatePlayerScoreAndResetHunted as jest.Mock).mockImplementation(
@@ -96,7 +96,6 @@ describe("Unit test for calculateHunterScores", () => {
             score: "T20",
         });
 
-        // Setup updatePlayerScoreAndResetHunted to return a score equal to targetScore.
         (updatePlayerScoreAndResetHunted as jest.Mock).mockImplementation(
             (acc, { player, score }) => ({ ...acc, [`p${player}`]: 301 })
         );
