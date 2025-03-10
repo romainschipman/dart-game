@@ -12,6 +12,21 @@ interface KeyboardItemProps {
     onPress?: (label: string | number) => void;
 }
 
+/**
+ * KeyboardItem is a custom keyboard button component.
+ *
+ * @component
+ * @example
+ * <KeyboardItem
+ *    label="1"
+ *    isSpecial={false}
+ *    color="blue"
+ *    onPress={(label) => console.log(label)}
+ * />
+ *
+ * @param props - The component's props.
+ * @returns A styled button with a text or number label.
+ */
 const KeyboardItem: FunctionComponent<KeyboardItemProps> = (
     { label, isSpecial, color, onPress= () => {}, selected, disabled }
 ) => {
